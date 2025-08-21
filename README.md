@@ -1,20 +1,16 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# UAV Tracker Simulator
+A webapp that is designed to simulate the movement of UAVs on a world map.
 
-# Run and deploy your AI Studio app
+## Planned Features
+1. Path Tracking (showing path that UAV was taking as well as where it is going if path is pre-planned)
+2. Ability to edit attributes of any UAV you click on
+3. Ability to select a single UAV and "follow" it (ie. keep the camera on it as it moves)
+4. Simulated combat?
+5. Status indicators (maybe color of UAV indicates its status. EG: Red=Damaged,Green=Good,Yellow=Warnings,etc...)
+6. Optimizations to allow for thousands of UAVs to be tracked at once without performance issues.
 
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/drive/1EsOCXUu73mZ39IzYsTBseedjxAnP7Uej
-
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
+## Running the project
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+2. Run the app:
    `npm run dev`
