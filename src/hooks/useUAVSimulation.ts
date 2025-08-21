@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { UAV, UAVStatus } from '../types';
 import { INITIAL_CENTER } from '../hooks/useMap';
 
@@ -8,7 +8,7 @@ const MAX_SPEED_MPS = 250;
 const METERS_PER_DEGREE_LAT = 111132; // Approx. meters in 1 degree of latitude
 
 // Constants for simulation
-const SIMULATION_TICK_MS = 100;
+const SIMULATION_TICK_MS = 500;
 const TICK_SECONDS = SIMULATION_TICK_MS / 1000;
 const SPAWN_RADIUS = 1; // in degrees
 const BEARING_PERTURBATION = 10.0; // Max degrees to change direction per second
@@ -76,11 +76,6 @@ export const useUAVSimulation = (initialCount: number = 30) => {
   }, []);
 
   useEffect(() => {
-    setUAVCount(initialCount !== 0 ? initialCount : 30);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
     const intervalId = setInterval(() => {
       setUavs(prevUavs =>
         prevUavs.map(uav => {
@@ -123,7 +118,7 @@ export const useUAVSimulation = (initialCount: number = 30) => {
             newVx = -newVx;
             newLng = uav.lng + newVx; // Re-calculate position with reflected velocity
           }
-          
+
           // After potential reflection, recalculate bearing from the final vector
           const finalBearing = (Math.atan2(newVx, newVy) * 180 / Math.PI + 360) % 360;
 
@@ -141,6 +136,13 @@ export const useUAVSimulation = (initialCount: number = 30) => {
     }, SIMULATION_TICK_MS);
 
     return () => clearInterval(intervalId);
+  }, []);
+
+  // Cleanup
+  useEffect(() => {
+    setUAVCount(initialCount !== 0 ? initialCount : 30);
+    return () => setUAVCount(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return { uavs, setUAVCount, addUAV, removeUAV };
