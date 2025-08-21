@@ -40,6 +40,7 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-green: var(--green);
+    --color-grey: var(--grey);
 }
 
 :root {
@@ -76,6 +77,7 @@
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
     --green: oklch(65.174% 0.18762 145.981);
+    --grey: oklch(62.675% 0.00007 271.152);
 }
 
 .dark {
@@ -111,6 +113,7 @@
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
     --green: oklch(74.885% 0.23422 144.753);
+    --grey: oklch(62.675% 0.00007 271.152);
 }
 
 @layer base {
