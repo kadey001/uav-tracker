@@ -1,9 +1,9 @@
-
 import React, { useEffect, useState } from 'react';
 import { PlusIcon, MinusIcon } from './icons';
 import { Button } from './ui/button';
 import { UavList } from './UavList';
 import { UAV } from '@/types';
+import { useTrackedUav } from '../context/TrackedUavContext';
 
 interface ControlsProps {
     uavCount: number;
@@ -15,6 +15,7 @@ interface ControlsProps {
 
 export const ControlsComponent = ({ uavCount, setUAVCount, addUAV, removeUAV, uavs }: ControlsProps) => {
     const [numInput, setNumInput] = useState<number>(uavCount);
+    const { trackedUavId, setTrackedUavId } = useTrackedUav();
 
     const handleSetCount = (e: React.FormEvent) => {
         e.preventDefault();
@@ -29,7 +30,7 @@ export const ControlsComponent = ({ uavCount, setUAVCount, addUAV, removeUAV, ua
     }, [uavCount]);
 
     return (
-        <div className="absolute top-4 left-4 z-10 flex flex-col gap-4">
+        <div className="absolute top-4 left-4 z-10 flex flex-col h-[80vh] w-64 gap-4">
             <div className="bg-gray-800/80 backdrop-blur-sm border border-white/10 rounded-lg shadow-2xl p-4 w-64 text-gray-100 animate-fade-in">
                 <h2 className="text-xl font-bold mb-4 border-b border-gray-600 pb-2">UAV Controls</h2>
 
@@ -66,13 +67,16 @@ export const ControlsComponent = ({ uavCount, setUAVCount, addUAV, removeUAV, ua
                     </Button>
                 </div>
             </div>
-            <UavList
-                uavs={uavs}
-                onUavSelect={(uav) => {
-                    // Handle UAV selection
-                    console.log(`Selected UAV: ${uav.id}`);
-                }}
-            />
+            <div className='flex flex-col flex-grow min-h-0'>
+                <UavList
+                    uavs={uavs}
+                    trackedUavId={trackedUavId}
+                    setTrackedUavId={setTrackedUavId}
+                    onUavSelect={(uav) => {
+                        console.log(`Selected UAV: ${uav.id}`);
+                    }}
+                />
+            </div>
         </div>
     );
 };

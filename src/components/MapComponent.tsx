@@ -1,11 +1,11 @@
-// src/components/MapComponent.tsx
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import mapboxgl from 'mapbox-gl';
 import type { UAV, MarkerInfo } from '../types';
 import { useMap } from '../hooks/useMap';
 import { createMarkerElement } from '../lib/marker';
-import { UavInfo } from './UavInfo'; // Import the new component
+import { UavInfo } from './UavInfo';
+import { useTrackedUav } from '../context/TrackedUavContext';
 
 interface MapProps {
     uavs: UAV[];
@@ -15,6 +15,25 @@ interface MapProps {
 export const MapComponent = ({ uavs, mapboxToken }: MapProps) => {
     const { mapContainerRef, mapRef } = useMap({ mapboxToken });
     const markersRef = useRef<Map<string, MarkerInfo>>(new Map());
+    const { trackedUavId, setTrackedUavId } = useTrackedUav();
+    const [activePopups, setActivePopups] = useState<Set<string>>(new Set());
+    const activePopupsRef = useRef(activePopups);
+
+    useEffect(() => {
+        activePopupsRef.current = activePopups;
+    }, [activePopups]);
+
+    const togglePopup = (id: string) => {
+        setActivePopups(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(id)) {
+                newSet.delete(id);
+            } else {
+                newSet.add(id);
+            }
+            return newSet;
+        });
+    };
 
     useEffect(() => {
         if (!mapRef.current) return;
@@ -26,26 +45,28 @@ export const MapComponent = ({ uavs, mapboxToken }: MapProps) => {
         // Remove markers for UAVs that no longer exist
         for (const [id, { marker, popup, popupRoot }] of markers.entries()) {
             if (!currentUavIds.has(id)) {
-                popupRoot.unmount(); // Unmount the React component
+                popupRoot.unmount();
                 marker.remove();
                 popup.remove();
                 markers.delete(id);
             }
         }
 
-        // Add or update markers for current UAVs
+        let zIndexCounter = 10;
+
         uavs.forEach(uav => {
             const existing = markers.get(uav.id);
+            const UAVInfo = <UavInfo uav={uav} onTrack={setTrackedUavId} isTracking={trackedUavId === uav.id} />;
             if (existing) {
-                // Update existing marker and its React-powered popup
+                // Update existing marker
                 existing.marker.setLngLat([uav.lng, uav.lat]).setRotation(uav.bearing);
-                existing.popupRoot.render(<UavInfo uav={uav} />);
+                existing.popupRoot.render(UAVInfo);
             } else {
-                // Create new marker with a React-powered popup
+                // Create new marker
                 const el = createMarkerElement(uav);
                 const popupNode = document.createElement('div');
                 const popupRoot = createRoot(popupNode);
-                popupRoot.render(<UavInfo uav={uav} />);
+                popupRoot.render(UAVInfo);
 
                 const popup = new mapboxgl.Popup({
                     offset: 25,
@@ -59,15 +80,41 @@ export const MapComponent = ({ uavs, mapboxToken }: MapProps) => {
                     .setPopup(popup)
                     .addTo(map);
 
-                // Show popup on hover
                 const markerEl = marker.getElement();
-                markerEl.addEventListener('mouseenter', () => marker.togglePopup());
-                markerEl.addEventListener('mouseleave', () => marker.togglePopup());
+                markerEl.addEventListener('click', () => {
+                    marker.togglePopup();
+                    togglePopup(uav.id);
+                });
+                markerEl.addEventListener('mouseenter', () => {
+                    if (!activePopupsRef.current.has(uav.id)) {
+                        marker.togglePopup();
+                    }
+                    // Ensures whatever marker the cursor is over has the highest z-index popup
+                    popup.getElement().style.zIndex = String(zIndexCounter++);
+                });
+                markerEl.addEventListener('mouseleave', () => {
+                    if (!activePopupsRef.current.has(uav.id)) {
+                        marker.togglePopup();
+                    }
+                });
 
                 markers.set(uav.id, { marker, popup, popupRoot });
             }
         });
-    }, [uavs, mapRef]);
+    }, [uavs, mapRef, activePopups]);
+
+    // Center map on tracked UAV
+    useEffect(() => {
+        if (!mapRef.current || !trackedUavId) return;
+        const uav = uavs.find(u => u.id === trackedUavId);
+        if (uav) {
+            mapRef.current.flyTo({
+                center: [uav.lng, uav.lat],
+                speed: 1.2,
+                essential: true,
+            });
+        }
+    }, [trackedUavId, uavs, mapRef]);
 
     return <div ref={mapContainerRef} className="w-full h-full" />;
 };
