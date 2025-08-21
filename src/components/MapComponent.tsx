@@ -42,7 +42,7 @@ export const MapComponent = ({ uavs, mapboxToken }: MapProps) => {
                 existing.popupRoot.render(<UavInfo uav={uav} />);
             } else {
                 // Create new marker with a React-powered popup
-                const el = createMarkerElement(uav.id);
+                const el = createMarkerElement(uav);
                 const popupNode = document.createElement('div');
                 const popupRoot = createRoot(popupNode);
                 popupRoot.render(<UavInfo uav={uav} />);
@@ -58,7 +58,7 @@ export const MapComponent = ({ uavs, mapboxToken }: MapProps) => {
                     .setRotation(uav.bearing)
                     .setPopup(popup)
                     .addTo(map);
-                
+
                 // Show popup on hover
                 const markerEl = marker.getElement();
                 markerEl.addEventListener('mouseenter', () => marker.togglePopup());

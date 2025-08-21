@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { UAV } from '../types';
+import type { UAV, UAVStatus } from '../types';
 import { INITIAL_CENTER } from '../hooks/useMap';
 
 // Constants for realistic speed calculation ---
@@ -34,6 +34,16 @@ export const useUAVSimulation = (initialCount: number = 30) => {
     const vx = speedDegreesPerTick * Math.sin(bearingRad);
     const vy = speedDegreesPerTick * Math.cos(bearingRad);
 
+    const potentialStatus: Array<UAVStatus> = ['active', 'inactive', 'low-battery', 'error', 'warning'];
+    let status = potentialStatus[Math.floor(Math.random() * potentialStatus.length)] as UAV['status'];
+
+    const battery = Math.floor(Math.random() * 101); // Random battery level between 0 and 100
+    if (battery === 0) status = 'inactive'; // If battery is 0, set status to inactive
+    else if (battery < 20) status = 'low-battery'; // If battery is below 20%, set status to low-battery
+    else {
+      if (status === 'low-battery') status = 'active';
+    }
+
     return {
       id: `UAV-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       lat: INITIAL_CENTER.lat + radius * Math.sin(angle),
@@ -42,6 +52,8 @@ export const useUAVSimulation = (initialCount: number = 30) => {
       bearing,
       speed: speedMPS, // Store the overall speed
       velocity: { vx, vy },
+      status,
+      battery,
     };
   }, []);
 
@@ -72,6 +84,15 @@ export const useUAVSimulation = (initialCount: number = 30) => {
     const intervalId = setInterval(() => {
       setUavs(prevUavs =>
         prevUavs.map(uav => {
+          if (uav.status === 'inactive') {
+            // If the UAV is inactive, we can assume it is stationary at its current position
+            return {
+              ...uav,
+              speed: 0,
+              velocity: { vx: 0, vy: 0 },
+              altitude: 0,
+            };
+          }
           // 1. Perturb the bearing for more natural turning
           const bearingChange = (Math.random() - 0.5) * BEARING_PERTURBATION * TICK_SECONDS;
           const newBearing = (uav.bearing + bearingChange + 360) % 360;

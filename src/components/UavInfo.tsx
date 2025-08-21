@@ -9,6 +9,8 @@ export const UavInfo = ({ uav }: { uav: UAV }) => {
             <div><strong>Alt:</strong> {uav.altitude.toFixed(0)} m</div>
             <div><strong>Bearing:</strong> {uav.bearing.toFixed(1)}°</div>
             <div><strong>Speed:</strong> {uav.speed} m/s</div>
+            <div><strong>Status:</strong> {uav.status} </div>
+            <div><strong>Battery:</strong> {uav.battery}%</div>
         </div>
     );
 };
