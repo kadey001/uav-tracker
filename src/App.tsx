@@ -6,8 +6,6 @@ import { MapComponent } from './components/MapComponent';
 import { ControlsComponent } from './components/ControlsComponent';
 import { TrackedUavProvider } from './context/TrackedUavContext';
 
-const MAPBOX_TOKEN = 'pk.eyJ1Ijoia2FkZXkwMDEiLCJhIjoiY21lZ2tqejdsMWFtZzJsb2g1c2ZnZXpreCJ9.QISelRcjU-dwiBg6eK3QWw';
-
 const App: React.FC = () => {
     const { uavs, setUAVCount, addUAV, removeUAV } = useUAVSimulation(30);
     const uavCount = React.useMemo(() => uavs.length, [uavs]);
@@ -31,10 +29,7 @@ const App: React.FC = () => {
                     uavs={uavs}
                 />
 
-                <MapComponent
-                    uavs={uavs}
-                    mapboxToken={MAPBOX_TOKEN}
-                />
+                <MapComponent uavs={uavs} />
             </div>
         </TrackedUavProvider>
     );

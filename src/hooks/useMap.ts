@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 
+const MAPBOX_TOKEN = process.env.MAPBOX_TOKEN;
 export const INITIAL_CENTER = { lat: 33.690538, lng: -117.915573 }; // LA
 
 const MAPBOX_STYLES = {
@@ -12,11 +13,12 @@ const MAPBOX_STYLES = {
     standard: 'mapbox://styles/mapbox/standard'
 };
 
+
 interface UseMapProps {
-    mapboxToken: string;
+    mapboxToken?: string;
 }
 
-export const useMap = ({ mapboxToken }: UseMapProps) => {
+export const useMap = ({ mapboxToken = MAPBOX_TOKEN }: UseMapProps) => {
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<mapboxgl.Map | null>(null);
 
@@ -43,5 +45,5 @@ export const useMap = ({ mapboxToken }: UseMapProps) => {
         };
     }, [mapboxToken]);
 
-    return {mapContainerRef, mapRef}
+    return { mapContainerRef, mapRef }
 }

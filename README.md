@@ -12,5 +12,7 @@ A webapp that is designed to simulate the movement of UAVs on a world map.
 ## Running the project
 1. Install dependencies:
    `npm install`
+2. Settup Env:
+   Create a .env file and add your variables (see vite.config.ts for needed variables)
 2. Run the app:
    `npm run dev`

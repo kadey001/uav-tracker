@@ -9,11 +9,10 @@ import { useTrackedUav } from '../context/TrackedUavContext';
 
 interface MapProps {
     uavs: UAV[];
-    mapboxToken: string;
 }
 
-export const MapComponent = ({ uavs, mapboxToken }: MapProps) => {
-    const { mapContainerRef, mapRef } = useMap({ mapboxToken });
+export const MapComponent = ({ uavs }: MapProps) => {
+    const { mapContainerRef, mapRef } = useMap({});
     const markersRef = useRef<Map<string, MarkerInfo>>(new Map());
     const { trackedUavId, setTrackedUavId } = useTrackedUav();
     const [activePopups, setActivePopups] = useState<Set<string>>(new Set());
