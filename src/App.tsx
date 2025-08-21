@@ -8,7 +8,7 @@ import { TrackedUavProvider } from './context/TrackedUavContext';
 
 const App: React.FC = () => {
     const { uavs, setUAVCount, addUAV, removeUAV } = useUAVSimulation(30);
-    const uavCount = React.useMemo(() => uavs.length, [uavs]);
+    const uavCount = React.useMemo(() => uavs.length, [uavs.length]);
 
     if (uavCount === 0) return null;
 

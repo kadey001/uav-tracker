@@ -53,10 +53,15 @@ export const MapComponent = ({ uavs }: MapProps) => {
 
         let zIndexCounter = 10;
 
-        uavs.forEach(uav => {
+        for (let i = 0; i < uavs.length; i++) {
+            const uav = uavs[i];
             const existing = markers.get(uav.id);
             const UAVInfo = <UavInfo uav={uav} onTrack={setTrackedUavId} isTracking={trackedUavId === uav.id} />;
             if (existing) {
+                // Check if in view, if not don't render
+                const isInView = mapRef.current?.getBounds().contains([uav.lng, uav.lat]);
+                if (!isInView) continue;
+
                 // Update existing marker
                 existing.marker.setLngLat([uav.lng, uav.lat]).setRotation(uav.bearing);
                 existing.popupRoot.render(UAVInfo);
@@ -99,8 +104,8 @@ export const MapComponent = ({ uavs }: MapProps) => {
 
                 markers.set(uav.id, { marker, popup, popupRoot });
             }
-        });
-    }, [uavs, mapRef, activePopups]);
+        }
+    }, [uavs, mapRef, activePopups, trackedUavId, setTrackedUavId]);
 
     // Center map on tracked UAV
     useEffect(() => {
@@ -114,6 +119,20 @@ export const MapComponent = ({ uavs }: MapProps) => {
             });
         }
     }, [trackedUavId, uavs, mapRef]);
+
+    useEffect(() => {
+        // This effect runs on mount and its cleanup runs on unmount
+        const markers = markersRef.current;
+        return () => {
+            // When the component unmounts, clean up all marker-related resources.
+            for (const [, { marker, popup, popupRoot }] of markers.entries()) {
+                popupRoot.unmount();
+                popup.remove();
+                marker.remove();
+            }
+            markers.clear();
+        };
+    }, []);
 
     return <div ref={mapContainerRef} className="w-full h-full" />;
 };
