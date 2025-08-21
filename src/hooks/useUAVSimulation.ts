@@ -1,31 +1,47 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { UAV } from '../types';
+import { INITIAL_CENTER } from '../hooks/useMap';
+
+// Constants for realistic speed calculation ---
+const MIN_SPEED_MPS = 5;
+const MAX_SPEED_MPS = 250;
+const METERS_PER_DEGREE_LAT = 111132; // Approx. meters in 1 degree of latitude
 
 // Constants for simulation
 const SIMULATION_TICK_MS = 100;
-const INITIAL_CENTER = { lat: 37.7749, lng: -122.4194 }; // San Francisco
+const TICK_SECONDS = SIMULATION_TICK_MS / 1000;
 const SPAWN_RADIUS = 1; // in degrees
-const VELOCITY_SCALE = 0.001;
-const VELOCITY_PERTURBATION = 0.00001;
-const HEADING_UPDATE_INTERVAL = 5000; // 5 seconds in milliseconds
+const BEARING_PERTURBATION = 10.0; // Max degrees to change direction per second
 
-export const useUAVSimulation = (initialCount: number = 3) => {
+export const useUAVSimulation = (initialCount: number = 30) => {
   const [uavs, setUavs] = useState<UAV[]>([]);
 
   const createUAV = useCallback((): UAV => {
     const angle = Math.random() * 2 * Math.PI;
     const radius = Math.random() * SPAWN_RADIUS;
+
+    // --- Generate a random speed and bearing ---
+    const speedMPS = MIN_SPEED_MPS + Math.random() * (MAX_SPEED_MPS - MIN_SPEED_MPS);
+    const bearing = Math.random() * 360;
+    const bearingRad = bearing * (Math.PI / 180);
+
+    // Convert speed from m/s to degrees/tick
+    const speedMetersPerTick = speedMPS * TICK_SECONDS;
+    const speedDegreesPerTick = speedMetersPerTick / METERS_PER_DEGREE_LAT;
+
+    // Calculate initial velocity vector from speed and bearing
+    // Bearing 0 is North, so vy is cos and vx is sin
+    const vx = speedDegreesPerTick * Math.sin(bearingRad);
+    const vy = speedDegreesPerTick * Math.cos(bearingRad);
+
     return {
       id: `UAV-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       lat: INITIAL_CENTER.lat + radius * Math.sin(angle),
       lng: INITIAL_CENTER.lng + radius * Math.cos(angle),
       altitude: 100 + Math.random() * 50,
-      bearing: Math.random() * 360,
-      velocity: {
-        vy: (Math.random() - 0.5) * VELOCITY_SCALE,
-        vx: (Math.random() - 0.5) * VELOCITY_SCALE,
-      },
+      bearing,
+      speed: speedMPS, // Store the overall speed
+      velocity: { vx, vy },
     };
   }, []);
 
@@ -37,8 +53,18 @@ export const useUAVSimulation = (initialCount: number = 3) => {
     setUavs(prev => [...prev, createUAV()]);
   }, [createUAV]);
 
+  const removeUAV = useCallback((id?: string) => {
+    // Defaults to removing the last drone
+    setUavs(prev => {
+      if (id) {
+        return prev.filter(uav => uav.id !== id);
+      }
+      return prev.slice(0, -1);
+    });
+  }, []);
+
   useEffect(() => {
-    setUAVCount(initialCount);
+    setUAVCount(initialCount !== 0 ? initialCount : 30);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -46,32 +72,47 @@ export const useUAVSimulation = (initialCount: number = 3) => {
     const intervalId = setInterval(() => {
       setUavs(prevUavs =>
         prevUavs.map(uav => {
-          // Perturb velocity for more "natural" random movement
-          let newVx = uav.velocity.vx + (Math.random() - 0.5) * VELOCITY_PERTURBATION;
-          let newVy = uav.velocity.vy + (Math.random() - 0.5) * VELOCITY_PERTURBATION;
+          // 1. Perturb the bearing for more natural turning
+          const bearingChange = (Math.random() - 0.5) * BEARING_PERTURBATION * TICK_SECONDS;
+          const newBearing = (uav.bearing + bearingChange + 360) % 360;
+          const newBearingRad = newBearing * (Math.PI / 180);
 
+          // 2. Perturb speed slightly but keep it within the defined min/max
+          let newSpeedMPS = uav.speed + (Math.random() - 0.5) * 0.5; // Fluctuate by max +/- 0.25 m/s
+          newSpeedMPS = Math.max(MIN_SPEED_MPS, Math.min(MAX_SPEED_MPS, newSpeedMPS));
+
+          // 3. Recalculate velocity vector from the new speed and bearing
+          const speedMetersPerTick = newSpeedMPS * TICK_SECONDS;
+          const speedDegreesPerTick = speedMetersPerTick / METERS_PER_DEGREE_LAT;
+          let newVx = speedDegreesPerTick * Math.sin(newBearingRad);
+          let newVy = speedDegreesPerTick * Math.cos(newBearingRad);
+
+          // 4. Update position
           let newLng = uav.lng + newVx;
           let newLat = uav.lat + newVy;
-          
-          // Simple boundary reflection
+
+          // 5. Simple boundary reflection (reflects the velocity component)
+          // TODO: Make boundary optional
           if (Math.abs(newLat - INITIAL_CENTER.lat) > SPAWN_RADIUS * 2) {
             newVy = -newVy;
-            newLat = uav.lat + newVy;
-          }
-          if (Math.abs(newLng - INITIAL_CENTER.lng) > SPAWN_RADIUS * 2) {
-            newVx = -newVx;
-            newLng = uav.lng + newVx;
+            newLat = uav.lat + newVy; // Re-calculate position with reflected velocity
           }
 
-          // Convert velocity vector to bearing in degrees
-          const newBearing = (Math.atan2(newVx, newVy) * 180) / Math.PI;
+          if (Math.abs(newLng - INITIAL_CENTER.lng) > SPAWN_RADIUS * 2) {
+            newVx = -newVx;
+            newLng = uav.lng + newVx; // Re-calculate position with reflected velocity
+          }
+          
+          // After potential reflection, recalculate bearing from the final vector
+          const finalBearing = (Math.atan2(newVx, newVy) * 180 / Math.PI + 360) % 360;
 
           return {
             ...uav,
             lat: newLat,
             lng: newLng,
-            altitude: Math.max(50, uav.altitude + (Math.random() - 0.5) * 2), // Keep altitude reasonable
-            bearing: newBearing,
+            altitude: Math.max(50, uav.altitude + (Math.random() - 0.5) * 2),
+            bearing: finalBearing,
+            speed: newSpeedMPS, // Update the speed
             velocity: { vx: newVx, vy: newVy },
           };
         })
@@ -81,5 +122,5 @@ export const useUAVSimulation = (initialCount: number = 3) => {
     return () => clearInterval(intervalId);
   }, []);
 
-  return { uavs, setUAVCount, addUAV };
+  return { uavs, setUAVCount, addUAV, removeUAV };
 };

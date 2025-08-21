@@ -1,5 +1,5 @@
 {
-  "name": "Real-time UAV Tracker",
+  "name": "Real-Time UAV Tracker",
   "description": "A web application to simulate and visualize real-time UAV (drone) tracking on a Mapbox map. Users can configure and add multiple drones to observe their simulated flight paths.",
   "requestFramePermissions": []
 }
