@@ -1,14 +1,11 @@
 import { getUAVColor } from './color';
-import DroneIconA from '../components/icons/DroneIconA.svg?raw';
-import DroneIconB from '../components/icons/DroneIconB.svg?raw';
-import DroneIconC from '../components/icons/DroneIconC.svg?raw';
+import { DroneIcons } from '../components/icons';
 import type { UAV } from '@/types';
 
 export const createMarkerElement = (uav: UAV) => {
     const marker = document.createElement('div');
     const getRandomIcon = () => {
-        const icons = [DroneIconA, DroneIconB, DroneIconC];
-        return icons[Math.floor(Math.random() * icons.length)];
+        return DroneIcons[Math.floor(Math.random() * DroneIcons.length)];
     };
     marker.innerHTML = getRandomIcon();
     const svg = marker.querySelector('svg');

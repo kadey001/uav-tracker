@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import mapboxgl from 'mapbox-gl';
 import type { UAV, MarkerInfo } from '../types';
 import { useMap } from '../hooks/useMap';
-import { createMarkerElement } from '../utils/marker';
+import { createMarkerElement } from '../lib/marker';
 import { UavInfo } from './UavInfo'; // Import the new component
 
 interface MapProps {
